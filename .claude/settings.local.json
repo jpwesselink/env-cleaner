@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo:*)",
+      "Bash(chmod:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm pack)",
+      "Bash(npm install:*)",
+      "Read(//private/tmp/**)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -14,7 +14,11 @@
     "bin/",
     "install.js"
   ],
-  "keywords": ["env", "dotenv", "cleaner"],
+  "keywords": [
+    "env",
+    "dotenv",
+    "cleaner"
+  ],
   "author": "jpwesselink",
   "license": "MIT",
   "repository": {

@@ -27,9 +27,18 @@ function getPlatform() {
 
 function downloadBinary() {
   const platform = getPlatform();
-  const binaryUrl = `https://github.com/jpwesselink/env-cleaner/releases/download/v${VERSION}/${BINARY_NAME}-${platform}`;
   const binPath = path.join(__dirname, 'bin');
   const binaryPath = path.join(binPath, BINARY_NAME);
+
+  // Check if binary already exists (e.g., from npm pack for local testing)
+  if (fs.existsSync(binaryPath)) {
+    console.log(`Binary already exists at ${binaryPath}`);
+    fs.chmodSync(binaryPath, '755');
+    console.log('Binary ready!');
+    return;
+  }
+
+  const binaryUrl = `https://github.com/jpwesselink/env-cleaner/releases/download/v${VERSION}/${BINARY_NAME}-${platform}`;
 
   if (!fs.existsSync(binPath)) {
     fs.mkdirSync(binPath, { recursive: true });
@@ -40,6 +49,31 @@ function downloadBinary() {
   const file = fs.createWriteStream(binaryPath);
   
   https.get(binaryUrl, (response) => {
+    if (response.statusCode === 302 || response.statusCode === 301) {
+      // Handle redirect
+      file.close();
+      fs.unlinkSync(binaryPath);
+      https.get(response.headers.location, (redirectResponse) => {
+        const newFile = fs.createWriteStream(binaryPath);
+        redirectResponse.pipe(newFile);
+        newFile.on('finish', () => {
+          newFile.close();
+          fs.chmodSync(binaryPath, '755');
+          console.log(`${BINARY_NAME} installed successfully!`);
+        });
+      });
+      return;
+    }
+    
+    if (response.statusCode !== 200) {
+      file.close();
+      fs.unlinkSync(binaryPath);
+      console.error(`Download failed: HTTP ${response.statusCode}`);
+      console.log('Attempting to build from source...');
+      buildFromSource();
+      return;
+    }
+    
     response.pipe(file);
     file.on('finish', () => {
       file.close();
@@ -57,8 +91,20 @@ function downloadBinary() {
 function buildFromSource() {
   try {
     console.log('Building from source with Cargo...');
+    
+    // Check if pre-built binary exists in the package
+    const packageBinaryPath = path.join(__dirname, 'bin', BINARY_NAME);
+    if (fs.existsSync(packageBinaryPath)) {
+      console.log('Using bundled binary from package...');
+      // Binary already exists from npm pack, just make sure it's executable
+      fs.chmodSync(packageBinaryPath, '755');
+      console.log('Binary ready!');
+      return;
+    }
+    
+    // Try to build from source
     execSync('cargo --version', { stdio: 'ignore' });
-    execSync('cargo build --release', { stdio: 'inherit' });
+    execSync('cargo build --release', { stdio: 'inherit', cwd: __dirname });
     
     const binPath = path.join(__dirname, 'bin');
     if (!fs.existsSync(binPath)) {
@@ -73,6 +119,7 @@ function buildFromSource() {
     console.log('Built from source successfully!');
   } catch (e) {
     console.error('Failed to build from source. Please install Rust: https://rustup.rs/');
+    console.error('Or wait for the GitHub release to be available.');
     process.exit(1);
   }
 }
