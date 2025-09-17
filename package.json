@@ -1,0 +1,24 @@
+{
+  "name": "env-cleaner",
+  "version": "0.1.0",
+  "description": "Find and clean .env files",
+  "bin": {
+    "env-cleaner": "./bin/env-cleaner"
+  },
+  "scripts": {
+    "postinstall": "node install.js",
+    "build": "cargo build --release",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "bin/",
+    "install.js"
+  ],
+  "keywords": ["env", "dotenv", "cleaner"],
+  "author": "jpwesselink",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jpwesselink/env-cleaner.git"
+  }
+}
